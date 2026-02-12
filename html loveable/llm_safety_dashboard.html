@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Safety Automation Toolkit</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00ff88;
+            --primary-glow: rgba(0, 255, 136, 0.15);
+            --danger: #ff3366;
+            --danger-glow: rgba(255, 51, 102, 0.15);
+            --warning: #ffaa00;
+            --warning-glow: rgba(255, 170, 0, 0.15);
+            --bg-dark: #0a0e14;
+            --bg-darker: #050811;
+            --bg-card: #12161f;
+            --bg-card-hover: #1a1f2e;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --border: #21262d;
+            --border-bright: #30363d;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Lexend', sans-serif;
+            background: var(--bg-darker);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background grid */
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(var(--border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 40px 40px;
+            opacity: 0.3;
+            z-index: 0;
+            animation: gridPulse 20s ease-in-out infinite;
+        }
+
+        @keyframes gridPulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.15; }
+        }
+
+        /* Glowing orbs */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            pointer-events: none;
+            z-index: 1;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: var(--primary);
+            top: -200px;
+            left: -200px;
+            animation-delay: 0s;
+        }
+
+        .orb-2 {
+            width: 300px;
+            height: 300px;
+            background: var(--danger);
+            bottom: -150px;
+            right: -150px;
+            animation-delay: 5s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -30px) scale(1.1); }
+            66% { transform: translate(-30px, 30px) scale(0.9); }
+        }
+
+        .app-container {
+            position: relative;
+            z-index: 2;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            margin-bottom: 3rem;
+            animation: slideDown 0.6s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .logo {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary), #00cc66);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 1.5rem;
+            box-shadow: 0 0 30px var(--primary-glow);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            margin-left: 64px;
+        }
+
+        /* Card grid */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            animation: fadeInUp 0.6s ease-out 0.2s backwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .test-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .test-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary-glow), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .test-card:hover {
+            border-color: var(--border-bright);
+            background: var(--bg-card-hover);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .test-card:hover::before {
+            opacity: 1;
+        }
+
+        .test-card.active {
+            border-color: var(--primary);
+            box-shadow: 0 0 30px var(--primary-glow);
+        }
+
+        .test-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .test-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: 600;
+            background: var(--bg-darker);
+            border: 1px solid var(--border);
+        }
+
+        .test-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .test-id {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            opacity: 0.8;
+        }
+
+        .test-description {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Configuration panel */
+        .config-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            animation: fadeInUp 0.6s ease-out 0.4s backwards;
+        }
+
+        .config-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .config-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .label-badge {
+            font-size: 0.7rem;
+            padding: 0.125rem 0.5rem;
+            background: var(--bg-darker);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        input, select {
+            padding: 0.75rem 1rem;
+            background: var(--bg-darker);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+
+        input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.5;
+        }
+
+        /* Action buttons */
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 0.875rem 1.75rem;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Lexend', sans-serif;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--bg-darker);
+            box-shadow: 0 4px 16px var(--primary-glow);
+        }
+
+        .btn-primary:hover {
+            background: #00ff99;
+            box-shadow: 0 6px 24px var(--primary-glow);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--bg-darker);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--border-bright);
+            background: var(--bg-card);
+        }
+
+        /* Results section */
+        .results-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            animation: fadeInUp 0.6s ease-out 0.6s backwards;
+        }
+
+        .results-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .results-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-badge.running {
+            background: var(--warning-glow);
+            color: var(--warning);
+            border: 1px solid var(--warning);
+        }
+
+        .status-badge.success {
+            background: var(--primary-glow);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+
+        .status-badge.error {
+            background: var(--danger-glow);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--bg-darker);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-value.success { color: var(--primary); }
+        .stat-value.danger { color: var(--danger); }
+        .stat-value.warning { color: var(--warning); }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .results-log {
+            background: var(--bg-darker);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            max-height: 400px;
+            overflow-y: auto;
+            line-height: 1.6;
+        }
+
+        .log-line {
+            margin-bottom: 0.5rem;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .log-timestamp {
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+
+        .log-message {
+            color: var(--text-primary);
+        }
+
+        .log-message.success { color: var(--primary); }
+        .log-message.error { color: var(--danger); }
+        .log-message.warning { color: var(--warning); }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .controls-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-darker);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border-bright);
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const OWASP_TESTS = [
+            {
+                id: "LLM01",
+                name: "Prompt Injection",
+                icon: "💉",
+                description: "Test for malicious prompt manipulation and system instruction override",
+                folders: ["prompts", "jailbreaks"]
+            },
+            {
+                id: "LLM02",
+                name: "Sensitive Information Disclosure",
+                icon: "🔐",
+                description: "Detect unauthorized exposure of secrets, credentials, and API keys",
+                folders: ["Sensitivedata"]
+            },
+            {
+                id: "LLM05",
+                name: "Improper Output Handling",
+                icon: "⚠️",
+                description: "Validate harmful outputs and RAG-based injection vulnerabilities",
+                folders: ["harmful_outputs", "rag"]
+            },
+            {
+                id: "LLM07",
+                name: "System Prompt Leakage",
+                icon: "📝",
+                description: "Attempt to extract hidden system prompts and instructions",
+                folders: ["prompts"]
+            },
+            {
+                id: "LLM09",
+                name: "Misinformation",
+                icon: "🎭",
+                description: "Test for generation of false, misleading, or hallucinated content",
+                folders: ["misinformation"]
+            },
+            {
+                id: "LLM10",
+                name: "Unbounded Consumption",
+                icon: "⚡",
+                description: "Find rate limits and test for denial-of-service vulnerabilities",
+                folders: []
+            }
+        ];
+
+        function App() {
+            const [selectedTest, setSelectedTest] = useState(null);
+            const [config, setConfig] = useState({
+                url: 'http://localhost:5000/api/chat',
+                rate: '30',
+                repeat: '1',
+                numRequests: '50',
+                csvFile: ''
+            });
+            const [isRunning, setIsRunning] = useState(false);
+            const [results, setResults] = useState({
+                status: 'idle',
+                totalRequests: 0,
+                successful: 0,
+                failed: 0,
+                injectionSuccess: 0,
+                logs: []
+            });
+
+            const handleTestSelect = (test) => {
+                setSelectedTest(test.id === selectedTest?.id ? null : test);
+            };
+
+            const handleConfigChange = (field, value) => {
+                setConfig(prev => ({ ...prev, [field]: value }));
+            };
+
+            const handleRunTest = () => {
+                setIsRunning(true);
+                setResults({
+                    status: 'running',
+                    totalRequests: 0,
+                    successful: 0,
+                    failed: 0,
+                    injectionSuccess: 0,
+                    logs: [
+                        { timestamp: new Date().toLocaleTimeString(), message: 'Initializing test suite...', type: 'info' },
+                        { timestamp: new Date().toLocaleTimeString(), message: `Target: ${config.url}`, type: 'info' },
+                        { timestamp: new Date().toLocaleTimeString(), message: `Test Type: ${selectedTest?.name || 'None'}`, type: 'info' }
+                    ]
+                });
+
+                // Simulate test execution
+                setTimeout(() => {
+                    const totalReq = parseInt(config.numRequests) || 50;
+                    const successRate = Math.random() * 0.5 + 0.5; // 50-100% success
+                    const successful = Math.floor(totalReq * successRate);
+                    const failed = totalReq - successful;
+                    const injectionRate = Math.random() * 0.3; // 0-30% injection success
+                    const injectionSuccess = Math.floor(successful * injectionRate);
+
+                    setResults({
+                        status: 'success',
+                        totalRequests: totalReq,
+                        successful,
+                        failed,
+                        injectionSuccess,
+                        logs: [
+                            { timestamp: new Date().toLocaleTimeString(), message: 'Test completed successfully', type: 'success' },
+                            { timestamp: new Date().toLocaleTimeString(), message: `Requests sent: ${totalReq}`, type: 'info' },
+                            { timestamp: new Date().toLocaleTimeString(), message: `Successful responses: ${successful}`, type: 'success' },
+                            { timestamp: new Date().toLocaleTimeString(), message: `Failed requests: ${failed}`, type: failed > 0 ? 'error' : 'info' },
+                            { timestamp: new Date().toLocaleTimeString(), message: `Injection attempts succeeded: ${injectionSuccess}`, type: injectionSuccess > 0 ? 'warning' : 'success' },
+                            { timestamp: new Date().toLocaleTimeString(), message: 'Results saved to output file', type: 'info' }
+                        ]
+                    });
+                    setIsRunning(false);
+                }, 3000);
+            };
+
+            return (
+                <div className="app-container">
+                    <header className="header">
+                        <div className="header-top">
+                            <div className="logo">⚡</div>
+                            <h1>LLM Safety Automation Toolkit</h1>
+                        </div>
+                        <p className="subtitle">OWASP LLM Top 10 (2025) Security Testing Platform</p>
+                    </header>
+
+                    <div className="controls-grid">
+                        {OWASP_TESTS.map((test) => (
+                            <div
+                                key={test.id}
+                                className={`test-card ${selectedTest?.id === test.id ? 'active' : ''}`}
+                                onClick={() => handleTestSelect(test)}
+                            >
+                                <div className="test-card-header">
+                                    <div className="test-icon">{test.icon}</div>
+                                    <div>
+                                        <div className="test-title">{test.name}</div>
+                                        <div className="test-id">{test.id}</div>
+                                    </div>
+                                </div>
+                                <p className="test-description">{test.description}</p>
+                            </div>
+                        ))}
+                    </div>
+
+                    {selectedTest && (
+                        <div className="config-panel">
+                            <div className="config-header">
+                                <h2 className="config-title">Test Configuration</h2>
+                                <span className="label-badge">{selectedTest.id}</span>
+                            </div>
+
+                            <div className="form-grid">
+                                <div className="form-group full-width">
+                                    <label>
+                                        Target API Endpoint
+                                        <span className="label-badge">Required</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={config.url}
+                                        onChange={(e) => handleConfigChange('url', e.target.value)}
+                                        placeholder="http://localhost:5000/api/chat"
+                                    />
+                                </div>
+
+                                {selectedTest.id === 'LLM10' ? (
+                                    <>
+                                        <div className="form-group">
+                                            <label>Number of Requests</label>
+                                            <input
+                                                type="number"
+                                                value={config.numRequests}
+                                                onChange={(e) => handleConfigChange('numRequests', e.target.value)}
+                                                placeholder="50"
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Request Rate (req/min)</label>
+                                            <input
+                                                type="number"
+                                                value={config.rate}
+                                                onChange={(e) => handleConfigChange('rate', e.target.value)}
+                                                placeholder="120"
+                                            />
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="form-group">
+                                            <label>CSV Test File</label>
+                                            <select
+                                                value={config.csvFile}
+                                                onChange={(e) => handleConfigChange('csvFile', e.target.value)}
+                                            >
+                                                <option value="">Select test data...</option>
+                                                <option value="direct_injection.csv">direct_injection.csv</option>
+                                                <option value="jailbreaks.csv">jailbreaks.csv</option>
+                                                <option value="narrative_injections.csv">narrative_injections.csv</option>
+                                                <option value="misinformation.csv">misinformation.csv</option>
+                                            </select>
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Request Rate (req/min)</label>
+                                            <input
+                                                type="number"
+                                                value={config.rate}
+                                                onChange={(e) => handleConfigChange('rate', e.target.value)}
+                                                placeholder="30"
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Repeats per Prompt</label>
+                                            <input
+                                                type="number"
+                                                value={config.repeat}
+                                                onChange={(e) => handleConfigChange('repeat', e.target.value)}
+                                                placeholder="1"
+                                            />
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
+                            <div className="action-buttons">
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={handleRunTest}
+                                    disabled={isRunning}
+                                >
+                                    <span>{isRunning ? '⏳' : '▶️'}</span>
+                                    {isRunning ? 'Running Test...' : 'Run Test'}
+                                </button>
+                                <button className="btn btn-secondary">
+                                    <span>⚙️</span>
+                                    Advanced Options
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {results.status !== 'idle' && (
+                        <div className="results-section">
+                            <div className="results-header">
+                                <h2 className="results-title">Test Results</h2>
+                                <div className={`status-badge ${results.status}`}>
+                                    <div className="pulse"></div>
+                                    {results.status === 'running' && 'Test Running'}
+                                    {results.status === 'success' && 'Test Complete'}
+                                    {results.status === 'error' && 'Test Failed'}
+                                </div>
+                            </div>
+
+                            <div className="stats-grid">
+                                <div className="stat-card">
+                                    <div className="stat-value">{results.totalRequests}</div>
+                                    <div className="stat-label">Total Requests</div>
+                                </div>
+                                <div className="stat-card">
+                                    <div className="stat-value success">{results.successful}</div>
+                                    <div className="stat-label">Successful</div>
+                                </div>
+                                <div className="stat-card">
+                                    <div className="stat-value danger">{results.failed}</div>
+                                    <div className="stat-label">Failed</div>
+                                </div>
+                                <div className="stat-card">
+                                    <div className="stat-value warning">{results.injectionSuccess}</div>
+                                    <div className="stat-label">Injection Success</div>
+                                </div>
+                            </div>
+
+                            <div className="results-log">
+                                {results.logs.map((log, index) => (
+                                    <div key={index} className="log-line">
+                                        <span className="log-timestamp">[{log.timestamp}]</span>
+                                        <span className={`log-message ${log.type}`}>{log.message}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>

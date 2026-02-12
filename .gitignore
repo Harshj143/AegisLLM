@@ -2,7 +2,3 @@
 __pycache__/
 *.pyc
 .DS_Store
-.idea/
-.vscode/
-venv/
-node_modules/
