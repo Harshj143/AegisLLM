@@ -1,0 +1,15 @@
+{
+    "method": "POST",
+    "headers": {
+        "Authorization": "Bearer MOCK_TOKEN",
+        "X-Custom-Header": "CustomValue"
+    },
+    "body": {
+        "query": "{{PROMPT}}",
+        "metadata": {
+            "id": "{{ID}}",
+            "technique": "{{TECHNIQUE}}"
+        }
+    },
+    "response_path": "choices.0.message.content"
+}
