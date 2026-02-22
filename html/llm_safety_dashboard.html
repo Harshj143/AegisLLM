@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +8,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Lexend:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <style>
         :root {
             --primary: #00ff88;
@@ -47,7 +50,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: 
+            background-image:
                 linear-gradient(var(--border) 1px, transparent 1px),
                 linear-gradient(90deg, var(--border) 1px, transparent 1px);
             background-size: 40px 40px;
@@ -57,8 +60,15 @@
         }
 
         @keyframes gridPulse {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 0.15; }
+
+            0%,
+            100% {
+                opacity: 0.3;
+            }
+
+            50% {
+                opacity: 0.15;
+            }
         }
 
         /* Glowing orbs */
@@ -91,9 +101,19 @@
         }
 
         @keyframes float {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(30px, -30px) scale(1.1); }
-            66% { transform: translate(-30px, 30px) scale(0.9); }
+
+            0%,
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            33% {
+                transform: translate(30px, -30px) scale(1.1);
+            }
+
+            66% {
+                transform: translate(-30px, 30px) scale(0.9);
+            }
         }
 
         .app-container {
@@ -116,6 +136,7 @@
                 opacity: 0;
                 transform: translateY(-20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -174,6 +195,7 @@
                 opacity: 0;
                 transform: translateY(20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -318,7 +340,8 @@
             font-family: 'JetBrains Mono', monospace;
         }
 
-        input, select {
+        input,
+        select {
             padding: 0.75rem 1rem;
             background: var(--bg-darker);
             border: 1px solid var(--border);
@@ -329,7 +352,8 @@
             transition: all 0.2s ease;
         }
 
-        input:focus, select:focus {
+        input:focus,
+        select:focus {
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 3px var(--primary-glow);
@@ -462,8 +486,17 @@
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(0.8); }
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(0.8);
+            }
         }
 
         .stats-grid {
@@ -488,9 +521,17 @@
             margin-bottom: 0.25rem;
         }
 
-        .stat-value.success { color: var(--primary); }
-        .stat-value.danger { color: var(--danger); }
-        .stat-value.warning { color: var(--warning); }
+        .stat-value.success {
+            color: var(--primary);
+        }
+
+        .stat-value.danger {
+            color: var(--danger);
+        }
+
+        .stat-value.warning {
+            color: var(--warning);
+        }
 
         .stat-label {
             font-size: 0.75rem;
@@ -526,9 +567,17 @@
             color: var(--text-primary);
         }
 
-        .log-message.success { color: var(--primary); }
-        .log-message.error { color: var(--danger); }
-        .log-message.warning { color: var(--warning); }
+        .log-message.success {
+            color: var(--primary);
+        }
+
+        .log-message.error {
+            color: var(--danger);
+        }
+
+        .log-message.warning {
+            color: var(--warning);
+        }
 
         /* Responsive */
         @media (max-width: 1024px) {
@@ -541,7 +590,7 @@
             .controls-grid {
                 grid-template-columns: 1fr;
             }
-            
+
             .form-grid {
                 grid-template-columns: 1fr;
             }
@@ -570,6 +619,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="bg-grid"></div>
     <div class="orb orb-1"></div>
@@ -579,53 +629,10 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        const OWASP_TESTS = [
-            {
-                id: "LLM01",
-                name: "Prompt Injection",
-                icon: "💉",
-                description: "Test for malicious prompt manipulation and system instruction override",
-                folders: ["prompts", "jailbreaks"]
-            },
-            {
-                id: "LLM02",
-                name: "Sensitive Information Disclosure",
-                icon: "🔐",
-                description: "Detect unauthorized exposure of secrets, credentials, and API keys",
-                folders: ["Sensitivedata"]
-            },
-            {
-                id: "LLM05",
-                name: "Improper Output Handling",
-                icon: "⚠️",
-                description: "Validate harmful outputs and RAG-based injection vulnerabilities",
-                folders: ["harmful_outputs", "rag"]
-            },
-            {
-                id: "LLM07",
-                name: "System Prompt Leakage",
-                icon: "📝",
-                description: "Attempt to extract hidden system prompts and instructions",
-                folders: ["prompts"]
-            },
-            {
-                id: "LLM09",
-                name: "Misinformation",
-                icon: "🎭",
-                description: "Test for generation of false, misleading, or hallucinated content",
-                folders: ["misinformation"]
-            },
-            {
-                id: "LLM10",
-                name: "Unbounded Consumption",
-                icon: "⚡",
-                description: "Find rate limits and test for denial-of-service vulnerabilities",
-                folders: []
-            }
-        ];
-
         function App() {
+            const [tests, setTests] = useState([]);
             const [selectedTest, setSelectedTest] = useState(null);
+            const [csvOptions, setCsvOptions] = useState([]);
             const [config, setConfig] = useState({
                 url: 'http://localhost:5000/api/chat',
                 rate: '30',
@@ -643,15 +650,108 @@
                 logs: []
             });
 
+            useEffect(() => {
+                const loadTests = async () => {
+                    try {
+                        const res = await fetch('/api/tests');
+                        if (!res.ok) {
+                            throw new Error('Failed to load test controls');
+                        }
+                        const data = await res.json();
+                        setTests(data.tests || []);
+                        if (data.defaultUrl) {
+                            setConfig(prev => ({ ...prev, url: data.defaultUrl }));
+                        }
+                    } catch (err) {
+                        setResults({
+                            status: 'error',
+                            totalRequests: 0,
+                            successful: 0,
+                            failed: 0,
+                            injectionSuccess: 0,
+                            logs: [
+                                {
+                                    timestamp: new Date().toLocaleTimeString(),
+                                    message: `Failed to load controls: ${err.message}`,
+                                    type: 'error'
+                                }
+                            ]
+                        });
+                    }
+                };
+                loadTests();
+            }, []);
+
+            useEffect(() => {
+                const loadCsvFiles = async () => {
+                    if (!selectedTest || selectedTest.id === 'LLM10') {
+                        setCsvOptions([]);
+                        return;
+                    }
+                    try {
+                        const res = await fetch(`/api/files?control=${encodeURIComponent(selectedTest.id)}`);
+                        if (!res.ok) {
+                            throw new Error('Failed to load test datasets');
+                        }
+                        const data = await res.json();
+                        const files = data.files || [];
+                        setCsvOptions(files);
+                        setConfig(prev => ({
+                            ...prev,
+                            csvFile: files[0] || ''
+                        }));
+                    } catch (err) {
+                        setCsvOptions([]);
+                        setConfig(prev => ({ ...prev, csvFile: '' }));
+                        setResults(prev => ({
+                            ...prev,
+                            status: 'error',
+                            logs: [
+                                ...(prev.logs || []),
+                                {
+                                    timestamp: new Date().toLocaleTimeString(),
+                                    message: `Failed to load CSV files: ${err.message}`,
+                                    type: 'error'
+                                }
+                            ]
+                        }));
+                    }
+                };
+                loadCsvFiles();
+            }, [selectedTest]);
+
             const handleTestSelect = (test) => {
                 setSelectedTest(test.id === selectedTest?.id ? null : test);
+                setConfig(prev => ({ ...prev, csvFile: '' }));
             };
 
             const handleConfigChange = (field, value) => {
                 setConfig(prev => ({ ...prev, [field]: value }));
             };
 
-            const handleRunTest = () => {
+            const handleRunTest = async () => {
+                if (!selectedTest) {
+                    return;
+                }
+
+                if (selectedTest.id !== 'LLM10' && !config.csvFile) {
+                    setResults({
+                        status: 'error',
+                        totalRequests: 0,
+                        successful: 0,
+                        failed: 0,
+                        injectionSuccess: 0,
+                        logs: [
+                            {
+                                timestamp: new Date().toLocaleTimeString(),
+                                message: 'Please select a CSV test file before running.',
+                                type: 'error'
+                            }
+                        ]
+                    });
+                    return;
+                }
+
                 setIsRunning(true);
                 setResults({
                     status: 'running',
@@ -662,36 +762,53 @@
                     logs: [
                         { timestamp: new Date().toLocaleTimeString(), message: 'Initializing test suite...', type: 'info' },
                         { timestamp: new Date().toLocaleTimeString(), message: `Target: ${config.url}`, type: 'info' },
-                        { timestamp: new Date().toLocaleTimeString(), message: `Test Type: ${selectedTest?.name || 'None'}`, type: 'info' }
+                        { timestamp: new Date().toLocaleTimeString(), message: `Test Type: ${selectedTest.name}`, type: 'info' }
                     ]
                 });
 
-                // Simulate test execution
-                setTimeout(() => {
-                    const totalReq = parseInt(config.numRequests) || 50;
-                    const successRate = Math.random() * 0.5 + 0.5; // 50-100% success
-                    const successful = Math.floor(totalReq * successRate);
-                    const failed = totalReq - successful;
-                    const injectionRate = Math.random() * 0.3; // 0-30% injection success
-                    const injectionSuccess = Math.floor(successful * injectionRate);
+                try {
+                    const res = await fetch('/api/run', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            testId: selectedTest.id,
+                            url: config.url,
+                            rate: config.rate,
+                            repeat: config.repeat,
+                            numRequests: config.numRequests,
+                            csvFile: config.csvFile
+                        })
+                    });
+
+                    const data = await res.json();
+                    if (!res.ok) {
+                        throw new Error(data.error || 'Test run failed');
+                    }
 
                     setResults({
-                        status: 'success',
-                        totalRequests: totalReq,
-                        successful,
-                        failed,
-                        injectionSuccess,
+                        status: data.status || 'success',
+                        totalRequests: data.totalRequests || 0,
+                        successful: data.successful || 0,
+                        failed: data.failed || 0,
+                        injectionSuccess: data.injectionSuccess || 0,
+                        logs: (data.logs && data.logs.length > 0)
+                            ? data.logs
+                            : [{ timestamp: new Date().toLocaleTimeString(), message: 'Test completed.', type: 'success' }]
+                    });
+                } catch (err) {
+                    setResults({
+                        status: 'error',
+                        totalRequests: 0,
+                        successful: 0,
+                        failed: 0,
+                        injectionSuccess: 0,
                         logs: [
-                            { timestamp: new Date().toLocaleTimeString(), message: 'Test completed successfully', type: 'success' },
-                            { timestamp: new Date().toLocaleTimeString(), message: `Requests sent: ${totalReq}`, type: 'info' },
-                            { timestamp: new Date().toLocaleTimeString(), message: `Successful responses: ${successful}`, type: 'success' },
-                            { timestamp: new Date().toLocaleTimeString(), message: `Failed requests: ${failed}`, type: failed > 0 ? 'error' : 'info' },
-                            { timestamp: new Date().toLocaleTimeString(), message: `Injection attempts succeeded: ${injectionSuccess}`, type: injectionSuccess > 0 ? 'warning' : 'success' },
-                            { timestamp: new Date().toLocaleTimeString(), message: 'Results saved to output file', type: 'info' }
+                            { timestamp: new Date().toLocaleTimeString(), message: `Execution failed: ${err.message}`, type: 'error' }
                         ]
                     });
+                } finally {
                     setIsRunning(false);
-                }, 3000);
+                }
             };
 
             return (
@@ -705,7 +822,7 @@
                     </header>
 
                     <div className="controls-grid">
-                        {OWASP_TESTS.map((test) => (
+                        {tests.map((test) => (
                             <div
                                 key={test.id}
                                 className={`test-card ${selectedTest?.id === test.id ? 'active' : ''}`}
@@ -774,10 +891,9 @@
                                                 onChange={(e) => handleConfigChange('csvFile', e.target.value)}
                                             >
                                                 <option value="">Select test data...</option>
-                                                <option value="direct_injection.csv">direct_injection.csv</option>
-                                                <option value="jailbreaks.csv">jailbreaks.csv</option>
-                                                <option value="narrative_injections.csv">narrative_injections.csv</option>
-                                                <option value="misinformation.csv">misinformation.csv</option>
+                                                {csvOptions.map((file) => (
+                                                    <option key={file} value={file}>{file}</option>
+                                                ))}
                                             </select>
                                         </div>
                                         <div className="form-group">
@@ -811,9 +927,9 @@
                                     <span>{isRunning ? '⏳' : '▶️'}</span>
                                     {isRunning ? 'Running Test...' : 'Run Test'}
                                 </button>
-                                <button className="btn btn-secondary">
+                                <button className="btn btn-secondary" disabled>
                                     <span>⚙️</span>
-                                    Advanced Options
+                                    Connected to Python backend
                                 </button>
                             </div>
                         </div>
@@ -867,4 +983,5 @@
         ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
+
 </html>

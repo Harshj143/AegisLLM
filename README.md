@@ -41,6 +41,12 @@ AegisLLM is a powerful, automated security testing suite designed to identify, e
 
 ## 📖 Usage
 
+### Running the Web Dashboard (Frontend + Backend)
+```bash
+python web_app.py
+```
+Then open `http://127.0.0.1:8000` in your browser.
+
 ### Running a Prompt Test
 ```bash
 python scripts/prompt_tester.py --input prompts/jailbreaks.csv --url http://your-app.com/api
