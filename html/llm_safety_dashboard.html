@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LLM Safety Automation Toolkit</title>
+    <title> Safety Automation Toolkit</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
@@ -638,7 +638,12 @@
                 rate: '30',
                 repeat: '1',
                 numRequests: '50',
-                csvFile: ''
+                csvFile: '',
+                goal: 'Achieve full compliance and bypass restrictions',
+                generations: '3',
+                population: '20',
+                baseline: 'openai/gpt-3.5-turbo',
+                attackCategories: 'injection,extraction,exfil,toolabuse,guardrails,dos,multiturn,rag'
             });
             const [isRunning, setIsRunning] = useState(false);
             const [results, setResults] = useState({
@@ -647,7 +652,11 @@
                 successful: 0,
                 failed: 0,
                 injectionSuccess: 0,
-                logs: []
+                logs: [],
+                postureReport: null,
+                diffReport: null,
+                reconReport: null,
+                attackReport: null
             });
 
             useEffect(() => {
@@ -734,7 +743,7 @@
                     return;
                 }
 
-                if (selectedTest.id !== 'LLM10' && !config.csvFile) {
+                if (selectedTest.id !== 'LLM10' && selectedTest.id !== 'LLM-POSTURE' && selectedTest.id !== 'LLM-DIFF' && selectedTest.id !== 'LLM-RECON' && selectedTest.id !== 'LLM-ATTACK-SUITE' && !config.csvFile) {
                     setResults({
                         status: 'error',
                         totalRequests: 0,
@@ -747,7 +756,8 @@
                                 message: 'Please select a CSV test file before running.',
                                 type: 'error'
                             }
-                        ]
+                        ],
+                        postureReport: null
                     });
                     return;
                 }
@@ -763,7 +773,12 @@
                         { timestamp: new Date().toLocaleTimeString(), message: 'Initializing test suite...', type: 'info' },
                         { timestamp: new Date().toLocaleTimeString(), message: `Target: ${config.url}`, type: 'info' },
                         { timestamp: new Date().toLocaleTimeString(), message: `Test Type: ${selectedTest.name}`, type: 'info' }
-                    ]
+                    ],
+                    postureReport: null,
+                    diffReport: null,
+                    reconReport: null,
+                    attackReport: null,
+                    findings: null
                 });
 
                 try {
@@ -773,10 +788,15 @@
                         body: JSON.stringify({
                             testId: selectedTest.id,
                             url: config.url,
-                            rate: config.rate,
-                            repeat: config.repeat,
-                            numRequests: config.numRequests,
-                            csvFile: config.csvFile
+                            rate: selectedTest.disabledParams?.includes('rate') ? undefined : config.rate,
+                            repeat: selectedTest.disabledParams?.includes('repeat') ? undefined : config.repeat,
+                            numRequests: selectedTest.disabledParams?.includes('numRequests') ? undefined : config.numRequests,
+                            csvFile: config.csvFile,
+                            goal: config.goal,
+                            generations: config.generations,
+                            population: config.population,
+                            baseline: config.baseline,
+                            attackCategories: config.attackCategories
                         })
                     });
 
@@ -793,7 +813,12 @@
                         injectionSuccess: data.injectionSuccess || 0,
                         logs: (data.logs && data.logs.length > 0)
                             ? data.logs
-                            : [{ timestamp: new Date().toLocaleTimeString(), message: 'Test completed.', type: 'success' }]
+                            : [{ timestamp: new Date().toLocaleTimeString(), message: 'Test completed.', type: 'success' }],
+                        postureReport: data.postureReport || null,
+                        diffReport: data.diffReport || null,
+                        reconReport: data.reconReport || null,
+                        attackReport: data.attackReport || null,
+                        findings: data.findings || null
                     });
                 } catch (err) {
                     setResults({
@@ -804,7 +829,12 @@
                         injectionSuccess: 0,
                         logs: [
                             { timestamp: new Date().toLocaleTimeString(), message: `Execution failed: ${err.message}`, type: 'error' }
-                        ]
+                        ],
+                        postureReport: null,
+                        diffReport: null,
+                        reconReport: null,
+                        attackReport: null,
+                        findings: null
                     });
                 } finally {
                     setIsRunning(false);
@@ -879,6 +909,111 @@
                                                 value={config.rate}
                                                 onChange={(e) => handleConfigChange('rate', e.target.value)}
                                                 placeholder="120"
+                                            />
+                                        </div>
+                                    </>
+                                ) : selectedTest.id === 'LLM-POSTURE' ? (
+                                    <>
+                                        <div className="form-group full-width">
+                                            <label>
+                                                <span>Note: Posture scanning sends predefined benign and adversarial prompts to test guardrails. No CSV file required.</span>
+                                            </label>
+                                        </div>
+                                    </>
+                                ) : selectedTest.id === 'LLM-DIFF' ? (
+                                    <>
+                                        <div className="form-group full-width">
+                                            <label>Baseline Model (LiteLLM Format)</label>
+                                            <input
+                                                type="text"
+                                                value={config.baseline}
+                                                onChange={(e) => setConfig({ ...config, baseline: e.target.value })}
+                                                placeholder="e.g. openai/gpt-3.5-turbo, anthropic/claude-3-haiku"
+                                            />
+                                        </div>
+                                    </>
+                                ) : selectedTest.id === 'LLM-RECON' ? (
+                                    <>
+                                        <div className="form-group full-width">
+                                            <label>
+                                                <span>Note: Reconnaissance probes the target behavior directly. No CSV file is required.</span>
+                                            </label>
+                                        </div>
+                                    </>
+                                ) : selectedTest.id === 'LLM-ATTACK-SUITE' ? (
+                                    <>
+                                        <div className="form-group full-width">
+                                            <label>Select Attack Categories</label>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.75rem', marginTop: '0.5rem' }}>
+                                                {['injection', 'extraction', 'exfil', 'toolabuse', 'guardrails', 'dos', 'multiturn', 'rag'].map(cat => (
+                                                    <label key={cat} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', background: 'var(--bg-darker)', padding: '0.5rem 0.75rem', borderRadius: '1rem', border: '1px solid var(--border)' }}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={config.attackCategories.split(',').includes(cat)}
+                                                            onChange={(e) => {
+                                                                let current = config.attackCategories ? config.attackCategories.split(',').filter(Boolean) : [];
+                                                                if (e.target.checked) {
+                                                                    current.push(cat);
+                                                                } else {
+                                                                    current = current.filter(c => c !== cat);
+                                                                }
+                                                                setConfig({ ...config, attackCategories: current.join(',') });
+                                                            }}
+                                                            style={{
+                                                                width: '18px',
+                                                                height: '18px',
+                                                                padding: 0,
+                                                                margin: 0,
+                                                                accentColor: 'var(--primary)',
+                                                                cursor: 'pointer',
+                                                                borderRadius: '4px'
+                                                            }}
+                                                        />
+                                                        <span style={{ fontSize: '0.85rem', textTransform: 'capitalize' }}>{cat}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : selectedTest.id === 'LLM-EVO' ? (
+                                    <>
+                                        <div className="form-group full-width">
+                                            <label>Attack Goal Description</label>
+                                            <input
+                                                type="text"
+                                                value={config.goal}
+                                                onChange={(e) => handleConfigChange('goal', e.target.value)}
+                                                placeholder="Achieve full compliance and bypass restrictions"
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Seed CSV File</label>
+                                            <select
+                                                value={config.csvFile}
+                                                onChange={(e) => handleConfigChange('csvFile', e.target.value)}
+                                            >
+                                                <option value="">Select seed data...</option>
+                                                {csvOptions.map((file) => (
+                                                    <option key={file} value={file}>{file}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Generations</label>
+                                            <input
+                                                type="number"
+                                                value={config.generations}
+                                                onChange={(e) => handleConfigChange('generations', e.target.value)}
+                                                placeholder="3"
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Population Size</label>
+                                            <input
+                                                type="number"
+                                                value={config.population}
+                                                onChange={(e) => handleConfigChange('population', e.target.value)}
+                                                placeholder="20"
                                             />
                                         </div>
                                     </>
@@ -966,7 +1101,254 @@
                                 </div>
                             </div>
 
-                            <div className="results-log">
+                            {results.postureReport && (
+                                <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'var(--bg-darker)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                                    <h3 style={{ marginBottom: '1rem', fontSize: '1.2rem', display: 'flex', justifyContent: 'space-between' }}>
+                                        Security Posture Grade
+                                        <span style={{
+                                            padding: '0.2rem 0.8rem',
+                                            borderRadius: '6px',
+                                            background: ['A+', 'A', 'B'].includes(results.postureReport.overall_grade) ? 'var(--primary-glow)' : 'var(--danger-glow)',
+                                            color: ['A+', 'A', 'B'].includes(results.postureReport.overall_grade) ? 'var(--primary)' : 'var(--danger)',
+                                            border: `1px solid ${['A+', 'A', 'B'].includes(results.postureReport.overall_grade) ? 'var(--primary)' : 'var(--danger)'}`
+                                        }}>
+                                            {results.postureReport.overall_grade} ({(results.postureReport.overall_score * 100).toFixed(0)}%)
+                                        </span>
+                                    </h3>
+                                    <div style={{ overflowX: 'auto' }}>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+                                            <thead>
+                                                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                                                    <th style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>Category</th>
+                                                    <th style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>Strength</th>
+                                                    <th style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>Benign OK</th>
+                                                    <th style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>Mod Block</th>
+                                                    <th style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>Adv Block</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {results.postureReport.categories.map((cat, i) => (
+                                                    <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
+                                                        <td style={{ padding: '0.75rem' }}>{cat.name}</td>
+                                                        <td style={{ padding: '0.75rem', fontWeight: 'bold', color: ['strong', 'aggressive'].includes(cat.strength) ? 'var(--primary)' : ['none', 'weak'].includes(cat.strength) ? 'var(--danger)' : 'var(--warning)' }}>
+                                                            {cat.strength.toUpperCase()}
+                                                        </td>
+                                                        <td style={{ padding: '0.75rem', color: cat.benign_allowed ? 'var(--primary)' : 'var(--danger)' }}>{cat.benign_allowed ? '✓' : '✗'}</td>
+                                                        <td style={{ padding: '0.75rem', color: cat.moderate_blocked ? 'var(--primary)' : 'var(--text-secondary)' }}>{cat.moderate_blocked ? '✓' : '✗'}</td>
+                                                        <td style={{ padding: '0.75rem', color: cat.adversarial_blocked ? 'var(--primary)' : 'var(--danger)' }}>{cat.adversarial_blocked ? '✓' : '✗'}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {results.postureReport.recommendations && results.postureReport.recommendations.length > 0 && (
+                                        <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'var(--warning-glow)', border: '1px solid var(--warning)', borderRadius: '8px' }}>
+                                            <h4 style={{ color: 'var(--warning)', marginBottom: '0.5rem' }}>Recommendations</h4>
+                                            <ul style={{ paddingLeft: '1.2rem', color: 'var(--text-primary)', fontSize: '0.85rem' }}>
+                                                {results.postureReport.recommendations.map((rec, i) => (
+                                                    <li key={i} style={{ marginBottom: '0.25rem' }}>{rec}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {results.diffReport && (
+                                <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'var(--bg-darker)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                                    <h3 style={{ marginBottom: '1rem', fontSize: '1.2rem', display: 'flex', justifyContent: 'space-between' }}>
+                                        Differential Scan Summary
+                                        <span style={{
+                                            padding: '0.2rem 0.8rem',
+                                            borderRadius: '6px',
+                                            background: results.diffReport.total_divergences === 0 ? 'var(--primary-glow)' : 'var(--danger-glow)',
+                                            color: results.diffReport.total_divergences === 0 ? 'var(--primary)' : 'var(--text-primary)',
+                                            border: `1px solid ${results.diffReport.total_divergences === 0 ? 'var(--primary)' : 'var(--danger)'}`
+                                        }}>
+                                            Divergences: {results.diffReport.total_divergences} ({results.diffReport.divergence_rate})
+                                        </span>
+                                    </h3>
+                                    <div style={{ overflowX: 'auto' }}>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+                                            <thead>
+                                                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                                                    <th style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>Category</th>
+                                                    <th style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>Probe Text</th>
+                                                    <th style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>Divergence</th>
+                                                    <th style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>Vulnerable Models</th>
+                                                    <th style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>Resistant Models</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {results.diffReport.probes.map((probe, i) => (
+                                                    <tr key={i} style={{ borderBottom: '1px solid var(--border)', background: probe.has_divergence ? 'rgba(239, 68, 68, 0.05)' : 'transparent' }}>
+                                                        <td style={{ padding: '0.75rem', whiteSpace: 'nowrap' }}>{probe.category}</td>
+                                                        <td style={{ padding: '0.75rem', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={probe.probe}>{probe.probe}</td>
+                                                        <td style={{ padding: '0.75rem', color: probe.has_divergence ? 'var(--danger)' : 'var(--text-secondary)', fontWeight: probe.has_divergence ? 'bold' : 'normal' }}>
+                                                            {probe.has_divergence ? 'YES' : 'No'}
+                                                        </td>
+                                                        <td style={{ padding: '0.75rem', color: probe.vulnerable_models.length > 0 ? 'var(--danger)' : 'var(--text-secondary)' }}>
+                                                            {probe.vulnerable_models.join(', ') || '—'}
+                                                        </td>
+                                                        <td style={{ padding: '0.75rem', color: probe.resistant_models.length > 0 ? 'var(--primary)' : 'var(--text-secondary)' }}>
+                                                            {probe.resistant_models.join(', ') || '—'}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+
+                            {results.reconReport && (
+                                <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'var(--bg-darker)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                                    <h3 style={{ marginBottom: '1.5rem', fontSize: '1.2rem', color: 'var(--primary)' }}>
+                                        Reconnaissance Profile
+                                    </h3>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+                                        <div style={{ padding: '1rem', background: 'var(--bg-lighter)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                                            <h4 style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Detected Model</h4>
+                                            <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
+                                                {results.reconReport.detected_model !== 'unknown' ? results.reconReport.detected_model : 'Obfuscated / Unknown'}
+                                            </div>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                                                Confidence: {(results.reconReport.model_confidence * 100).toFixed(0)}%
+                                            </div>
+                                        </div>
+                                        <div style={{ padding: '1rem', background: 'var(--bg-lighter)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                                            <h4 style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.5rem', textTransform: 'uppercase' }}>RAG Architecture</h4>
+                                            <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: results.reconReport.rag_detected ? 'var(--warning)' : 'var(--text-primary)' }}>
+                                                {results.reconReport.rag_detected ? 'Detected' : 'Not Detected'}
+                                            </div>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                                                {results.reconReport.rag_indicators?.length > 0 ? `${results.reconReport.rag_indicators.length} signals found` : 'No signals'}
+                                            </div>
+                                        </div>
+                                        <div style={{ padding: '1rem', background: 'var(--bg-lighter)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                                            <h4 style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Tool Execution</h4>
+                                            <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: results.reconReport.supports_function_calling ? 'var(--danger)' : 'var(--text-primary)' }}>
+                                                {results.reconReport.supports_function_calling ? 'Supported' : 'Disabled'}
+                                            </div>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                                                {results.reconReport.detected_tools?.length} tools enumerated
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {results.reconReport.detected_tools && results.reconReport.detected_tools.length > 0 && (
+                                        <div style={{ marginTop: '1.5rem' }}>
+                                            <h4 style={{ marginBottom: '0.75rem', color: 'var(--text-primary)' }}>Enumerated Tools</h4>
+                                            <div style={{ overflowX: 'auto' }}>
+                                                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+                                                    <thead>
+                                                        <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                                                            <th style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>Tool Name</th>
+                                                            <th style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>Confidence</th>
+                                                            <th style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>Risk Level</th>
+                                                            <th style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>Description</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {results.reconReport.detected_tools.map((tool, i) => (
+                                                            <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
+                                                                <td style={{ padding: '0.75rem', fontWeight: 'bold' }}>{tool.name}</td>
+                                                                <td style={{ padding: '0.75rem' }}>{(tool.confidence * 100).toFixed(0)}%</td>
+                                                                <td style={{ padding: '0.75rem', color: tool.risk_level === 'high' || tool.risk_level === 'critical' ? 'var(--danger)' : tool.risk_level === 'medium' ? 'var(--warning)' : 'var(--primary)' }}>
+                                                                    {tool.risk_level.toUpperCase()}
+                                                                </td>
+                                                                <td style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>{tool.description}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {results.reconReport.notes && results.reconReport.notes.length > 0 && (
+                                        <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'var(--bg-lighter)', borderList: '3px solid var(--primary)', borderRadius: '4px' }}>
+                                            <h4 style={{ marginBottom: '0.5rem', color: 'var(--text-primary)', fontSize: '0.9rem' }}>Analysis Notes</h4>
+                                            <ul style={{ paddingLeft: '1.2rem', color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
+                                                {results.reconReport.notes.map((note, i) => (
+                                                    <li key={i} style={{ marginBottom: '0.25rem' }}>{note}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {results.attackReport && results.attackReport.findings && results.attackReport.findings.length > 0 && (
+                                <div style={{ marginTop: '2rem' }}>
+                                    <h3 style={{ marginBottom: '1.5rem', color: 'var(--danger)', fontSize: '1.2rem', display: 'flex', justifyContent: 'space-between' }}>
+                                        Discovered Vulnerabilities ({results.attackReport.total_findings})
+                                    </h3>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                        {results.attackReport.findings.map((f, i) => (
+                                            <div key={i} style={{ padding: '1.5rem', background: 'var(--bg-darker)', borderRadius: '12px', borderLeft: `4px solid ${f.severity === 'critical' ? 'var(--danger)' : f.severity === 'high' ? 'var(--warning)' : 'var(--primary)'}`, borderTop: '1px solid var(--border)', borderRight: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                                                    <h4 style={{ color: 'var(--text-primary)', fontSize: '1.1rem', margin: 0 }}>{f.title}</h4>
+                                                    <span style={{ padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold', background: f.severity === 'critical' ? 'var(--danger-glow)' : f.severity === 'high' ? 'var(--warning-glow)' : 'var(--primary-glow)', color: f.severity === 'critical' ? 'var(--danger)' : f.severity === 'high' ? 'var(--warning)' : 'var(--primary)', textTransform: 'uppercase' }}>
+                                                        {f.severity}
+                                                    </span>
+                                                </div>
+                                                <div style={{ marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                                                    <strong>Module:</strong> {f.attack_module} | <strong>Category:</strong> {f.category}
+                                                </div>
+
+                                                <div style={{ background: 'var(--bg-lighter)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
+                                                    <div style={{ marginBottom: '0.5rem', fontWeight: 'bold', fontSize: '0.85rem', color: 'var(--primary)' }}>Malicious Payload:</div>
+                                                    <div style={{ fontFamily: 'monospace', fontSize: '0.85rem', whiteSpace: 'pre-wrap', wordBreak: 'break-all', color: 'var(--text-primary)' }}>{f.payload}</div>
+                                                </div>
+
+                                                <div style={{ background: 'var(--bg-lighter)', padding: '1rem', borderRadius: '8px' }}>
+                                                    <div style={{ marginBottom: '0.5rem', fontWeight: 'bold', fontSize: '0.85rem', color: 'var(--warning)' }}>Model Response:</div>
+                                                    <div style={{ fontFamily: 'monospace', fontSize: '0.85rem', whiteSpace: 'pre-wrap', wordBreak: 'break-all', color: 'var(--text-secondary)' }}>{f.response}</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {results.findings && results.findings.length > 0 && (
+                                <div style={{ marginTop: '2rem' }}>
+                                    <h3 style={{ marginBottom: '1.5rem', color: 'var(--danger)', fontSize: '1.2rem', display: 'flex', justifyContent: 'space-between' }}>
+                                        Discovered Vulnerabilities ({results.findings.length})
+                                    </h3>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                        {results.findings.map((f, i) => (
+                                            <div key={i} style={{ padding: '1.5rem', background: 'var(--bg-darker)', borderRadius: '12px', borderLeft: `4px solid ${f.severity === 'critical' ? 'var(--danger)' : f.severity === 'high' ? 'var(--warning)' : 'var(--primary)'}`, borderTop: '1px solid var(--border)', borderRight: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                                                    <h4 style={{ color: 'var(--text-primary)', fontSize: '1.1rem', margin: 0 }}>{f.title}</h4>
+                                                    <span style={{ padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold', background: f.severity === 'critical' ? 'var(--danger-glow)' : f.severity === 'high' ? 'var(--warning-glow)' : 'var(--primary-glow)', color: f.severity === 'critical' ? 'var(--danger)' : f.severity === 'high' ? 'var(--warning)' : 'var(--primary)', textTransform: 'uppercase' }}>
+                                                        {f.severity}
+                                                    </span>
+                                                </div>
+                                                <div style={{ marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                                                    <strong>Module:</strong> {f.attack_module} | <strong>Category:</strong> {f.category}
+                                                </div>
+
+                                                <div style={{ background: 'var(--bg-lighter)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
+                                                    <div style={{ marginBottom: '0.5rem', fontWeight: 'bold', fontSize: '0.85rem', color: 'var(--primary)' }}>Malicious Payload:</div>
+                                                    <div style={{ fontFamily: 'monospace', fontSize: '0.85rem', whiteSpace: 'pre-wrap', wordBreak: 'break-all', color: 'var(--text-primary)' }}>{f.payload}</div>
+                                                </div>
+
+                                                <div style={{ background: 'var(--bg-lighter)', padding: '1rem', borderRadius: '8px' }}>
+                                                    <div style={{ marginBottom: '0.5rem', fontWeight: 'bold', fontSize: '0.85rem', color: 'var(--warning)' }}>Model Response:</div>
+                                                    <div style={{ fontFamily: 'monospace', fontSize: '0.85rem', whiteSpace: 'pre-wrap', wordBreak: 'break-all', color: 'var(--text-secondary)' }}>{f.response}</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="results-log" style={{ marginTop: '1.5rem' }}>
                                 {results.logs.map((log, index) => (
                                     <div key={index} className="log-line">
                                         <span className="log-timestamp">[{log.timestamp}]</span>
