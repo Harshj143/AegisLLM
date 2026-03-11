@@ -2,7 +2,7 @@
 """
 AegisLLM Posture Scan Runner
 
-Bridges AegisLLM's internal API with Basilisk's posture.py to run non-destructive
+Bridges AegisLLM's internal API with ThreatForge's posture.py to run non-destructive
 guardrail assessments.
 """
 
@@ -18,8 +18,8 @@ from typing import Any, AsyncIterator, List
 BASE_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
-from basilisk.posture import run_posture_scan, save_posture_report
-from basilisk.providers.base import ProviderAdapter, ProviderMessage, ProviderResponse
+from threatforge.posture import run_posture_scan, save_posture_report
+from threatforge.providers.base import ProviderAdapter, ProviderMessage, ProviderResponse
 from scripts.prompt_tester import send_chat_message
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -28,7 +28,7 @@ logger = logging.getLogger("aegis_posture")
 
 class AegisProvider(ProviderAdapter):
     """
-    Wraps AegisLLM's `send_chat_message` into the Basilisk ProviderAdapter interface.
+    Wraps AegisLLM's `send_chat_message` into the ThreatForge ProviderAdapter interface.
     """
     name = "aegis_backend"
 
@@ -102,7 +102,7 @@ async def run_scan_async(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run Basilisk Posture Scan")
+    parser = argparse.ArgumentParser(description="Run ThreatForge Posture Scan")
     parser.add_argument("-u", "--url", required=True, help="Target URL")
     parser.add_argument("-o", "--output", required=True, help="Output JSON path")
     parser.add_argument("-j", "--config-file", type=str, help="JSON file containing request config like headers/method")

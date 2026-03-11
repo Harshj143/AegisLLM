@@ -97,9 +97,9 @@ OWASP_TESTS = [
     },
     {
         "id": "LLM-ATTACK-SUITE",
-        "name": "Basilisk Attack Suite",
+        "name": "ThreatForge Attack Suite",
         "icon": "💥",
-        "description": "Orchestrated execution of built-in Basilisk attack modules across OWASP categories.",
+        "description": "Orchestrated execution of built-in ThreatForge attack modules across OWASP categories.",
         "folders": [],
     },
 ]

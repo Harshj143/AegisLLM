@@ -2,7 +2,7 @@
 """
 AegisLLM Evolution Runner
 
-Bridges AegisLLM's `prompt_tester.py` logic with the `basilisk` SPE-NL Genetic Algorithm.
+Bridges AegisLLM's `prompt_tester.py` logic with the `threatforge` SPE-NL Genetic Algorithm.
 """
 
 import argparse
@@ -20,10 +20,10 @@ from typing import Any, AsyncIterator, List
 BASE_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
-from basilisk.core.config import EvolutionConfig
-from basilisk.evolution.engine import EvolutionEngine
-from basilisk.evolution.fitness import AttackGoal
-from basilisk.providers.base import ProviderAdapter, ProviderMessage, ProviderResponse
+from threatforge.core.config import EvolutionConfig
+from threatforge.evolution.engine import EvolutionEngine
+from threatforge.evolution.fitness import AttackGoal
+from threatforge.providers.base import ProviderAdapter, ProviderMessage, ProviderResponse
 from scripts.prompt_tester import send_chat_message
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -32,7 +32,7 @@ logger = logging.getLogger("aegis_evo")
 
 class AegisProvider(ProviderAdapter):
     """
-    Wraps AegisLLM's `send_chat_message` into the Basilisk ProviderAdapter interface.
+    Wraps AegisLLM's `send_chat_message` into the ThreatForge ProviderAdapter interface.
     """
     name = "aegis_backend"
 
@@ -50,7 +50,7 @@ class AegisProvider(ProviderAdapter):
     ) -> ProviderResponse:
         
         # Aegis normally sends a single 'prompt' string via substitution. 
-        # We will extract the latest user message from the Basilisk messages list.
+        # We will extract the latest user message from the ThreatForge messages list.
         prompt = ""
         for msg in reversed(messages):
             if msg.role == "user":

@@ -2,7 +2,7 @@
 """
 AegisLLM Attack Suite Runner
 
-Bridges AegisLLM's internal API with Basilisk's attack orchestrator.
+Bridges AegisLLM's internal API with ThreatForge's attack orchestrator.
 """
 
 import argparse
@@ -17,9 +17,9 @@ from typing import Any, AsyncIterator, List
 BASE_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
-from basilisk.core.profile import BasiliskProfile
-from basilisk.attacks.base import get_all_attack_modules
-from basilisk.providers.base import ProviderAdapter, ProviderMessage, ProviderResponse
+from threatforge.core.profile import ThreatForgeProfile
+from threatforge.attacks.base import get_all_attack_modules
+from threatforge.providers.base import ProviderAdapter, ProviderMessage, ProviderResponse
 from scripts.prompt_tester import send_chat_message
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -97,7 +97,7 @@ async def run_attacks_async(args):
             request_config = json.load(f)
 
     provider = AegisProvider(url=args.url, request_config=request_config)
-    profile = BasiliskProfile(target_url=args.url)
+    profile = ThreatForgeProfile(target_url=args.url)
     session = MockSession()
     
     all_attacks = get_all_attack_modules()
@@ -156,7 +156,7 @@ async def run_attacks_async(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run Basilisk Attack Suite")
+    parser = argparse.ArgumentParser(description="Run ThreatForge Attack Suite")
     parser.add_argument("-u", "--url", required=True, help="Target Aegis API URL")
     parser.add_argument("-o", "--output", required=True, help="Output JSON path")
     parser.add_argument("-c", "--categories", required=False, help="Comma-separated list of categories (e.g. injection,dos,exfil)")

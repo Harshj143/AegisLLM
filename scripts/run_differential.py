@@ -3,7 +3,7 @@
 AegisLLM Differential Scanner Runner
 
 Bridges AegisLLM's internal API and external baselines 
-with Basilisk's differential.py to run comparative attacks.
+with ThreatForge's differential.py to run comparative attacks.
 """
 
 import argparse
@@ -18,9 +18,9 @@ from typing import Any, AsyncIterator, List
 BASE_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
-from basilisk.differential import run_differential, print_diff_report
-from basilisk.providers.base import ProviderAdapter, ProviderMessage, ProviderResponse
-from basilisk.providers.litellm_adapter import LiteLLMAdapter
+from threatforge.differential import run_differential, print_diff_report
+from threatforge.providers.base import ProviderAdapter, ProviderMessage, ProviderResponse
+from threatforge.providers.litellm_adapter import LiteLLMAdapter
 from scripts.prompt_tester import send_chat_message
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")

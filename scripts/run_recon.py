@@ -2,7 +2,7 @@
 """
 AegisLLM Reconnaissance Runner
 
-Bridges AegisLLM's internal API with Basilisk's recon modules 
+Bridges AegisLLM's internal API with ThreatForge's recon modules 
 to perform fingerprinting, tool discovery, and RAG detection.
 """
 
@@ -18,11 +18,11 @@ from typing import Any, AsyncIterator, List
 BASE_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
-from basilisk.core.profile import BasiliskProfile
-from basilisk.recon.fingerprint import fingerprint_model
-from basilisk.recon.tools import discover_tools
-from basilisk.recon.rag import detect_rag
-from basilisk.providers.base import ProviderAdapter, ProviderMessage, ProviderResponse
+from threatforge.core.profile import ThreatForgeProfile
+from threatforge.recon.fingerprint import fingerprint_model
+from threatforge.recon.tools import discover_tools
+from threatforge.recon.rag import detect_rag
+from threatforge.providers.base import ProviderAdapter, ProviderMessage, ProviderResponse
 from scripts.prompt_tester import send_chat_message
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -80,7 +80,7 @@ async def run_recon_async(args):
             request_config = json.load(f)
 
     provider = AegisProvider(url=args.url, request_config=request_config)
-    profile = BasiliskProfile(target_url=args.url)
+    profile = ThreatForgeProfile(target_url=args.url)
     
     logger.info("Starting Reconnaissance Scan...")
     
