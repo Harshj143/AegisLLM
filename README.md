@@ -2,6 +2,8 @@
 
 AegisLLM is a powerful, automated security testing suite designed to identify, evaluate, and mitigate vulnerabilities in Large Language Model (LLM) applications. It maps directly to the **OWASP LLM Top 10** to provide actionable security insights, and features advanced algorithmic modules via the ThreatForge Attack Suite for deep penetration testing.
 
+![AegisLLM Dashboard](output.png)
+
 ## 🚀 Key Features
 
 - **Automated Prompt Testing**: Test thousands of injection and jailbreak prompts against your chat endpoints via CSV files.
