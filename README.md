@@ -44,6 +44,7 @@ An active fingerprinting module that attempts to automatically:
 
 ---
 
+
 ## 🛠️ Tool Architecture (The Scripts)
 
 | Script / Module | Purpose | OWASP Mapping |
