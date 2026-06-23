@@ -105,7 +105,3 @@ python scripts/injection_judge.py --input results/test_results.csv --model gpt-4
 ## 🛡️ Security Disclaimer
 
 This tool is for educational and authorized security testing purposes only. Never use AegisLLM against systems you do not own or have explicit permission to test.
-
-## 📄 License
-
-[MIT](LICENSE)
